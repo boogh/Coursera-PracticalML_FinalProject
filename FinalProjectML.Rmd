@@ -1,0 +1,73 @@
+---
+title: "Final Project Practical ML"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is the final project of the course Applied ML in coursera.
+```
+getwd()
+```
+
+``` {r caret}
+#setwd("C:\\Users\\DE103260\\Documents\\courses\\coursera\\datascience\\AppliedML")
+
+library(caret)
+library(readr)
+library(randomForest)
+#Importing the data, specifing the type of NA values:
+pml_train <- read.csv("./pml-training.csv" ,na.strings=c("NA","#DIV/0!", ""))
+pml_test <- read.csv("./pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+
+#Removing the non-informative columns (name, timestams, ...)
+pml_train <- pml_train[ ,-c(1 :7)]
+
+#Removing columns with NA values
+pml_train <- pml_train [colSums(is.na(pml_train)) == 0]
+
+#Changing the datatype of the "classe" column to be factor
+pml_train$classe <- factor(pml_train$classe)
+
+#Spliting the training data to training and crosValidation 
+set.seed(123)
+inTrain <- caret::createDataPartition(y = pml_train$classe , p=0.8 , list = FALSE)
+training <- pml_train[inTrain,]
+crosValidation <- pml_train[-inTrain,]
+dim(training); dim(crosValidation);
+
+#Training a limited RandomForest Model on the training data:
+fitModelRF <- randomForest(classe~., data=pml_train, importance=TRUE, ntree=150)
+
+#Checking the acuracy of the model:
+confusionMatrix(crosValidation$classe , predict(fitModelRF , newdata = crosValidation))
+
+
+#The acuracy is already more than 99% ! We predict the real test data with this model to see how it works on the main test:
+predict(fitModelRF , pml_test)
+
+#After submission we see that all the results are true! 
+# There are some idea to improve this model: e.g. Limiting the number of features. As wee see in the following plot we can see which features are more imporetant:
+
+
+# We also can use directly the pca preprocessing in training phase. The model takes much more time for training but does not improve the accuracy in a meaningful number.
+
+#modelPC <- train(classe ~. , data = training, method = "rf" , preProcess = "pca" , pcaComp=20 , prox = TRUE )
+
+#confusionMatrix(crosValidation$classe , predict(modelPC , newdata = crosValidation))
+
+
+```
+
+## Including Plots
+
+```{r fitModelRF }
+varImpPlot(fitModelRF)
+
+```
+
+
