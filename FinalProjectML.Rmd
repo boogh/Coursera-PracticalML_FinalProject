@@ -15,7 +15,6 @@ getwd()
 ```
 
 ``` {r caret}
-#setwd("C:\\Users\\DE103260\\Documents\\courses\\coursera\\datascience\\AppliedML")
 
 library(caret)
 library(readr)
