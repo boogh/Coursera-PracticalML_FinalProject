@@ -5,24 +5,31 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is the final project of the course Applied ML in coursera.
-```
-getwd()
-```
-
-``` {r caret}
-
 library(caret)
-library(readr)
 library(randomForest)
+```
+
+
+This is the final project of the course __Practical Machine Learning__ from _coursera_. The goal is to create a classification model based on the _Human Activity Recognition_ dataset. (http://groupware.les.inf.puc-rio.br/har)
+
+### Importing data: 
+
+First look of our data makes it clear that we have three different inputs which can be evaluated as _NA_ values:
+``` {r}
+library(readr)
 #Importing the data, specifing the type of NA values:
-pml_train <- read.csv("./pml-training.csv" ,na.strings=c("NA","#DIV/0!", ""))
+pml_train <- read.csv("./pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
 pml_test <- read.csv("./pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
 
+```
+### Data cleaning:
+
+Cleaning steps would be:
+1. Removing non-informative columns (e.g _name_ and _timestamps_, ...)
+2. Removing columns with _NA_ values
+3. Changing the type of _classe_ from _char_ to _factor_
+
+```{r}
 #Removing the non-informative columns (name, timestams, ...)
 pml_train <- pml_train[ ,-c(1 :7)]
 
@@ -32,9 +39,15 @@ pml_train <- pml_train [colSums(is.na(pml_train)) == 0]
 #Changing the datatype of the "classe" column to be factor
 pml_train$classe <- factor(pml_train$classe)
 
+```
+### Spliting data and creating a simple classificaiton model
+
+To splite the data and create a crosvalidation subset _createDataPartition_ from _catet_ package is used. To have an understanding of the important features I have created a small classification model using random forest with a limited number of trees.
+
+```{r}
 #Spliting the training data to training and crosValidation 
 set.seed(123)
-inTrain <- caret::createDataPartition(y = pml_train$classe , p=0.8 , list = FALSE)
+inTrain <- createDataPartition(y = pml_train$classe , p=0.7 , list = FALSE)
 training <- pml_train[inTrain,]
 crosValidation <- pml_train[-inTrain,]
 dim(training); dim(crosValidation);
@@ -45,28 +58,28 @@ fitModelRF <- randomForest(classe~., data=pml_train, importance=TRUE, ntree=150)
 #Checking the acuracy of the model:
 confusionMatrix(crosValidation$classe , predict(fitModelRF , newdata = crosValidation))
 
-
-#The acuracy is already more than 99% ! We predict the real test data with this model to see how it works on the main test:
+```
+### Testing the Model:
+ The acuracy of our model is already 100%! We predict the real test data with this model to see how it works on the main test:
+ 
+```{r}
 predict(fitModelRF , pml_test)
-
-#After submission we see that all the results are true! 
-# There are some idea to improve this model: e.g. Limiting the number of features. As wee see in the following plot we can see which features are more imporetant:
-
-
-# We also can use directly the pca preprocessing in training phase. The model takes much more time for training but does not improve the accuracy in a meaningful number.
-
-#modelPC <- train(classe ~. , data = training, method = "rf" , preProcess = "pca" , pcaComp=20 , prox = TRUE )
-
-#confusionMatrix(crosValidation$classe , predict(modelPC , newdata = crosValidation))
-
-
 ```
 
-## Including Plots
+### Improving Model:
+  After submission we see that all the results are already true! Still there are some ideas to improve this model: e.g.  we can limit the number of features to the most important features in the model.  We can also use _pca_ preprocessing to reduce dimentinality of input data (but this takes a lot of time on a normal desktop PC to compute!) We can chose round 20 features based on the visualisaion the feature importance of our model to make a smaller model (It does not help accuracy but helps improving intrepretablity of the model).
 
-```{r fitModelRF }
+_modelPC <- train(classe ~. , data = training, method = "rf" , preProcess = "pca" , pcaComp=20 , prox = TRUE )_
+
+To see which features are more important in our model:
+ 
+```{r}
+varImp(fitModelRF)
 varImpPlot(fitModelRF)
-
 ```
 
 
+
+## Sources
+
+Human Activity Recognition data set: http://groupware.les.inf.puc-rio.br/har
